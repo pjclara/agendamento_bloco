@@ -21,6 +21,15 @@ class PatologiaResource extends Resource
 
     protected static ?string $navigationGroup = 'Configurações';
 
+    
+    protected static ?string $navigationLabel = 'Patologias';
+
+    //protected static ?string $recordTitleAttribute = 'pageName';
+
+    protected static ?string $modelLabel = 'Patologia';
+
+    protected static ?string $pluralModelLabel = 'Patologias';
+
     public static function form(Form $form): Form
     {
         return $form

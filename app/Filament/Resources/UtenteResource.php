@@ -22,6 +22,14 @@ class UtenteResource extends Resource
 
     protected static ?string $navigationGroup = 'Configurações';
 
+    protected static ?string $navigationLabel = 'Utentes';
+
+    //protected static ?string $recordTitleAttribute = 'pageName';
+
+    protected static ?string $modelLabel = 'Utente';
+
+    protected static ?string $pluralModelLabel = 'Utentes';
+
     public static function form(Form $form): Form
     {
         return $form

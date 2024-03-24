@@ -7,6 +7,7 @@ use App\Models\Agenda;
 use App\Models\EstadoAgendamento;
 use App\Models\Utente;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Tabs\Tab;
@@ -19,11 +20,21 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use Filament\Tables\Filters\Filter;
+
 class AgendaResource extends Resource
 {
     protected static ?string $model = Agenda::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationLabel = 'Agendamentos';
+
+    //protected static ?string $recordTitleAttribute = 'pageName';
+
+    protected static ?string $modelLabel = 'Agendamento';
+
+    protected static ?string $pluralModelLabel = 'Agendamentos';
 
     public static function form(Form $form): Form
     {
@@ -162,6 +173,22 @@ class AgendaResource extends Resource
                 Tables\Filters\SelectFilter::make('estado_agendamento_id')
                     ->options(EstadoAgendamento::pluck('nome', 'id')->toArray())
                     ->label('Estado do agendamento'),
+                Tables\Filters\Filter::make('data')
+                    ->form([
+                        DatePicker::make('Data inicial'),
+                        DatePicker::make('Data final'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['Data inicial'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('data', '>=', $date),
+                            )
+                            ->when(
+                                $data['Data final'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('data', '<=', $date),
+                            );
+                    })
             ])
             ->actions([
                 Tables\Actions\EditAction::make()

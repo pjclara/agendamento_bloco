@@ -21,6 +21,15 @@ class IntervencaoResource extends Resource
 
     protected static ?string $navigationGroup = 'Configurações';
 
+        protected static ?string $navigationLabel = 'Intervenções';
+
+    //protected static ?string $recordTitleAttribute = 'pageName';
+
+    protected static ?string $modelLabel = 'Intervenção';
+
+    protected static ?string $pluralModelLabel = 'Intervenções';
+
+
     public static function form(Form $form): Form
     {
         return $form
