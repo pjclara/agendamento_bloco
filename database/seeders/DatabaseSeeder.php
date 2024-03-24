@@ -12,6 +12,10 @@ use App\Models\EstadoAgendamento;
 use App\Models\Intervencao;
 use App\Models\Patologia;
 use App\Models\Utente;
+use Illuminate\Support\Facades\DB;
+
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class DatabaseSeeder extends Seeder
 {
@@ -20,14 +24,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Paulo Clara',
-            'abrv' => 'PC',
-            'email' => 'pjclara@gmail.com',
-            'password' => bcrypt('pc2406451'),
-        ]);
 
         SubSistema::factory()->create([
             'nome' => 'ADSE',
@@ -76,6 +72,55 @@ class DatabaseSeeder extends Seeder
 
         foreach ($estadoAgendamento as $estado) {
             EstadoAgendamento::factory()->create($estado);
+        }
+
+        $admin = Role::create(['name' => 'admin']);
+
+        $roles = [
+            ['name' => 'cirurgiao', 'guard_name' => 'web'],
+            ['name' => 'anestesista', 'guard_name' => 'web'],
+            ['name' => 'enfermeira', 'guard_name' => 'web'],
+            ['name' => 'secretaria', 'guard_name' => 'web'],
+        ];
+
+        foreach ($roles as $role) {
+            DB::table('roles')->insert($role);
+        }
+
+        $user = User::factory()->create([
+            'name' => 'Paulo Clara',
+            'abrv' => 'PC',
+            'email' => 'pjclara@gmail.com',
+            'password' => bcrypt('pc2406451'),
+        ]);
+
+        $user->assignRole($admin);
+
+        $permissions = [
+            ['name' => 'create_utente', 'guard_name' => 'web'],
+            ['name' => 'view_utente', 'guard_name' => 'web'],
+            ['name' => 'update_utente', 'guard_name' => 'web'],
+            ['name' => 'delete_utente', 'guard_name' => 'web'],
+            ['name' => 'restore_utente', 'guard_name' => 'web'],
+            ['name' => 'forceDelete_utente', 'guard_name' => 'web'],
+        ];
+
+        foreach ($permissions as $permission) {
+            DB::table('permissions')->insert($permission);
+        }      
+
+        $permissions = [
+            ['name' => 'create_agenda', 'guard_name' => 'web'],
+            ['name' => 'view_agenda', 'guard_name' => 'web'],
+            ['name' => 'update_agenda', 'guard_name' => 'web'],
+            ['name' => 'delete_agenda', 'guard_name' => 'web'],
+            ['name' => 'restore_agenda', 'guard_name' => 'web'],
+            ['name' => 'forceDelete_agenda', 'guard_name' => 'web'],
+
+        ];
+
+        foreach ($permissions as $permission) {
+            DB::table('permissions')->insert($permission);
         }
 
     }

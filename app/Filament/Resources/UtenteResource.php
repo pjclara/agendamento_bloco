@@ -128,6 +128,15 @@ class UtenteResource extends Resource
                     Forms\Components\Select::make('sub_sistemas')
                         ->relationship('subSistemas', 'nome')
                         ->multiple()
+                        ->preload()
+                        ->manageOptionForm(function ($form) {
+                            return $form
+                                ->schema([
+                                    Forms\Components\TextInput::make('nome')
+                                        ->required()
+                                        ->maxLength(255),
+                                ]);
+                        }),
                 ]),
         ];
     }
