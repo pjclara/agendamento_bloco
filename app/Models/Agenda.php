@@ -23,6 +23,11 @@ class Agenda extends Model
         return $this->belongsToMany(Intervencao::class);
     }
 
+    public function intervencao()
+    {
+        return $this->belongsToMany(Intervencao::class)->first();
+    }
+
     public function patologias()
     {
         return $this->belongsToMany(Patologia::class);
@@ -62,4 +67,11 @@ class Agenda extends Model
     {
         return $this->belongsTo(EstadoAgendamento::class);
     }
+
+    public function faturacao()
+    {
+        // has one by user
+        return $this->hasOne(Faturacao::class)->where('user_id', auth()->id());
+    }
+
 }

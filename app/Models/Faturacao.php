@@ -9,13 +9,7 @@ class Faturacao extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'agenda_id',
-        'user_id',
-        'valor',
-        'data',
-        'observacoes',
-    ];
+    protected  $guarded = [];
 
 
     public function agenda()
@@ -28,5 +22,5 @@ class Faturacao extends Model
         return $this->belongsTo(User::class);
     }
 
-    
+
 }

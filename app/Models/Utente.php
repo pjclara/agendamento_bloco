@@ -13,6 +13,12 @@ class Utente extends Model
 
     protected $fillable = ['nome', 'numero_processo', 'sexo'];
 
+    // nome sempre 1º letra maiuscula de cada palavra
+    public function setNomeAttribute($value)
+    {
+        $this->attributes['nome'] = ucwords($value);
+    }    
+
     public function patologias()
     {
         return $this->belongsToMany(Patologia::class);

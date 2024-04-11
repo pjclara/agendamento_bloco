@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('faturacaos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('agenda_id')->constrained();
-            $table->foreignId('user_id')->constrained();
-            $table->decimal('valor', 10, 2);
+            $table->foreignId('agenda_id');
+            $table->foreignId('user_id');
+            $table->decimal('valor', 10, 2)->nullable();
             $table->date('data');
+            $table->string('funcao');
             $table->string('observacoes')->nullable();
             $table->softDeletes();
             $table->timestamps();

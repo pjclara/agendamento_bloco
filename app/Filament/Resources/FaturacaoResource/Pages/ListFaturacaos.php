@@ -16,4 +16,7 @@ class ListFaturacaos extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    
+
 }

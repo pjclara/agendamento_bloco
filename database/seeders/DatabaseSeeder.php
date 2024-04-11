@@ -94,7 +94,15 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('pc2406451'),
         ]);
 
+        
         $user->assignRole($admin);
+
+        $user = User::factory()->create([
+            'name' => 'Nuno Rama',
+            'abrv' => 'NR',
+            'email' => 'rama.nuno@gmail.com',
+            'password' => bcrypt('nunorama'),
+        ]);
 
         $permissions = [
             ['name' => 'create_utente', 'guard_name' => 'web'],

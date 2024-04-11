@@ -33,23 +33,7 @@ class UtenteResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\TextInput::make('nome')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('numero_processo')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\Select::make('sexo')
-                    ->required()
-                    ->options([
-                        'Masculino' => 'M',
-                        'Feminino' => 'F',
-                    ]),
-                Forms\Components\Select::make('sub_sistemas')
-                    ->relationship('subSistemas', 'nome')
-                    ->multiple()
-            ]);
+            ->schema(static::getUtenteFormSchema());
     }
 
     public static function table(Table $table): Table
@@ -100,8 +84,8 @@ class UtenteResource extends Resource
     {
         return [
             'index' => Pages\ListUtentes::route('/'),
-            'create' => Pages\CreateUtente::route('/create'),
-            'edit' => Pages\EditUtente::route('/{record}/edit'),
+            //'create' => Pages\CreateUtente::route('/create'),
+            //'edit' => Pages\EditUtente::route('/{record}/edit'),
         ];
     }
 
@@ -128,6 +112,7 @@ class UtenteResource extends Resource
                         ->required()
                         ->numeric(),
                     Forms\Components\Select::make('sexo')
+                        ->native(false)
                         ->required()
                         ->options([
                             'M' => 'Masculino',

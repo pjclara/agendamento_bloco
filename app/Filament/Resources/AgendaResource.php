@@ -2,25 +2,28 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\AgendaResource\Pages;
-use App\Models\Agenda;
-use App\Models\EstadoAgendamento;
-use App\Models\Utente;
 use Filament\Forms;
-use Filament\Forms\Components\DatePicker;
+use Filament\Tables;
+use App\Models\Agenda;
+use App\Models\Utente;
+use Filament\Forms\Get;
+use Filament\Forms\Form;
+use App\Models\Faturacao;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use App\Models\EstadoAgendamento;
+use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Tabs\Tab;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
+use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Collection;
+use App\Filament\Resources\AgendaResource\Pages;
 
-use Filament\Tables\Filters\Filter;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
 class AgendaResource extends Resource
 {
@@ -39,94 +42,9 @@ class AgendaResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Section::make()
-                    ->extraAttributes(['style' => 'background-color:#f4f4f4'])
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\Select::make('utente_id')
-                            ->relationship('utente', 'nome')
-                            ->native(false)
-                            ->preload()
-                            ->required()
-                            ->afterStateUpdated(function (?string $state, ?string $old, callable $set) {
-                                $set('sub_sistema_id', 1);
-                            })
-                            ->manageOptionForm(function (Form $form) {
-                                return $form
-                                    ->schema(UtenteResource::getUtenteFormSchema());
-                            }),
-                        Forms\Components\Select::make('sub_sistema_id')
-                            ->label('Sub Sistema')
-                            ->required()
-                            ->options(function (Get $get) {
-                                return Utente::find($get('utente_id'))?->subSistemas?->pluck('nome', 'id')->toArray();
-                            })
-                            ->native(false),
-                        Forms\Components\Select::make('patologias')
-                            ->preload()
-                            ->label('Patologias')
-                            ->multiple()
-                            ->relationship('patologias', 'nome')
-                            ->createOptionForm(function (Form $form) {
-                                return $form
-                                    ->schema([
-                                        Forms\Components\TextInput::make('nome')
-                                            ->required()
-                                            ->unique('patologias', 'nome'),
-                                    ]);
-                            }),
-                        Forms\Components\Select::make('intervencaos')
-                            ->preload()
-                            ->label('Intervenções')
-                            ->multiple()
-                            ->relationship('intervencaos', 'nome')
-                            ->createOptionForm(function (Form $form) {
-                                return $form
-                                    ->schema([
-                                        Forms\Components\TextInput::make('nome')
-                                            ->required()
-                                            ->unique('intervencaos', 'nome'),
-                                    ]);
-                            }),
-
-                    ]),
-                Section::make('Equipa e agenda')
-                    ->extraAttributes(['style' => 'background-color:#f4f4f4'])
-                    ->schema([
-                        Group::make([
-                            Forms\Components\Select::make('cirurgiao_id')
-                                ->relationship('cirurgiao', 'name')
-                                ->default(auth()->id())
-                                ->label('Cirurgião')
-                                ->native(false),
-                            Forms\Components\Select::make('ajudante_id')
-                                ->relationship('ajudante', 'name')
-                                ->visibleOn('edit')
-                                ->native(false),
-                            Forms\Components\Select::make('anestesista_id')
-                                ->relationship('anestesista', 'name')
-                                ->visibleOn('edit')
-                                ->native(false),
-                        ])->columns(3),
-                        Group::make([
-                            Forms\Components\DateTimePicker::make('data')
-                                ->required(),
-                            Forms\Components\Select::make('estado_agendamento_id')
-                                ->native(false)
-                                ->relationship('estadoAgendamento', 'nome')
-                                ->label('Estado do agendamento')
-                                ->required(),
-                        ])->columns(3),
-                    ]),
-                Section::make()
-                    ->extraAttributes(['style' => 'background-color:#f4f4f4'])
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\TextInput::make('observacoes')
-                            ->maxLength(255),
-                    ]),
-            ]);
+            ->schema(
+                static::formFields(),
+            );
     }
 
     public static function table(Table $table): Table
@@ -148,19 +66,16 @@ class AgendaResource extends Resource
                 Tables\Columns\TextColumn::make('subSistema.nome')
                     ->label('Sub Sistema'),
                 Tables\Columns\TextColumn::make('observacoes')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\SelectColumn::make('estado_agendamento_id')
                     ->options(EstadoAgendamento::pluck('nome', 'id')->toArray())
                     ->rules(['required'])
                     ->label('Estado')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
+                Tables\Columns\IconColumn::make('faturacao')
+                    ->boolean()
+                    ->label('Faturação')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
@@ -201,13 +116,43 @@ class AgendaResource extends Resource
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                /*
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    ExportBulkAction::make(),
+                    //Tables\Actions\DeleteBulkAction::make(),
+                    //Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
+                    //create custom bulk action
+                    Tables\Actions\BulkAction::make('custom')
+                        ->label('Custom Bulk Action')
+                        ->action(fn (Collection $records) => $records->each(
+                            function (Agenda $record) {
+                                $faturacao =  Faturacao::where('agenda_id', $record->id)
+                                    ->where('user_id', auth()->id())->first();
+                                if (!$faturacao) {
+                                    if ($record->cirurgiao_id == auth()->id())
+                                        $funcao = 'cirurgiao';
+                                    elseif ($record->ajudante_id == auth()->id())
+                                        $funcao = 'ajudante';
+                                    elseif ($record->anestesista_id == auth()->id())
+                                        $funcao = 'anestesista';
+                                    else
+                                        $funcao = 'outro';
+
+                                    if ($funcao != 'outro')
+                                        $record->faturacao()->create([
+                                            'user_id' => auth()->id(),
+                                            'valor' => 0,
+                                            'data' => now(),
+                                            'funcao' => $funcao,
+
+                                        ]);
+                                }
+                            }
+                        ))
+                        ->deselectRecordsAfterCompletion(),
+
                 ]),
-                */]);
+            ]);
     }
 
     public static function getRelations(): array
@@ -232,5 +177,97 @@ class AgendaResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+
+    public static function formFields(): array
+    {
+        return [
+            Section::make()
+                ->extraAttributes(['style' => 'background-color:#f4f4f4'])
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Select::make('utente_id')
+                        ->relationship('utente', 'nome')
+                        ->native(false)
+                        ->preload()
+                        ->required()
+                        ->afterStateUpdated(function (?string $state, ?string $old, callable $set) {
+                            $set('sub_sistema_id', 1);
+                        })
+                        ->manageOptionForm(function (Form $form) {
+                            return $form
+                                ->schema(UtenteResource::getUtenteFormSchema());
+                        }),
+                    Forms\Components\Select::make('sub_sistema_id')
+                        ->label('Sub Sistema')
+                        ->required()
+                        ->options(function (Get $get) {
+                            return Utente::find($get('utente_id'))?->subSistemas?->pluck('nome', 'id')->toArray();
+                        })
+                        ->native(false),
+                    Forms\Components\Select::make('patologias')
+                        ->preload()
+                        ->label('Patologias')
+                        ->multiple()
+                        ->relationship('patologias', 'nome')
+                        ->createOptionForm(function (Form $form) {
+                            return $form
+                                ->schema([
+                                    Forms\Components\TextInput::make('nome')
+                                        ->required()
+                                        ->unique('patologias', 'nome'),
+                                ]);
+                        }),
+                    Forms\Components\Select::make('intervencaos')
+                        ->preload()
+                        ->label('Intervenções')
+                        ->multiple()
+                        ->relationship('intervencaos', 'nome')
+                        ->createOptionForm(function (Form $form) {
+                            return $form
+                                ->schema([
+                                    Forms\Components\TextInput::make('nome')
+                                        ->required()
+                                        ->unique('intervencaos', 'nome'),
+                                ]);
+                        }),
+
+                ]),
+            Section::make('Equipa e agenda')
+                ->extraAttributes(['style' => 'background-color:#f4f4f4'])
+                ->schema([
+                    Group::make([
+                        Forms\Components\Select::make('cirurgiao_id')
+                            ->relationship('cirurgiao', 'name')
+                            ->default(auth()->id())
+                            ->label('Cirurgião')
+                            ->native(false),
+                        Forms\Components\Select::make('ajudante_id')
+                            ->relationship('ajudante', 'name')
+                            ->native(false),
+                        Forms\Components\Select::make('anestesista_id')
+                            ->relationship('anestesista', 'name')
+                            ->native(false),
+                    ])->columns(3),
+                    Group::make([
+                        Forms\Components\DatePicker::make('data')
+                            ->required(),
+                        Forms\Components\Select::make('estado_agendamento_id')
+                            ->native(false)
+                            ->relationship('estadoAgendamento', 'nome')
+                            ->label('Estado do agendamento')
+                            ->required(),
+                    ])->columns(3),
+                ]),
+            Section::make()
+                ->extraAttributes(['style' => 'background-color:#f4f4f4'])
+                ->columns(2)
+                ->schema([
+                    Forms\Components\TextInput::make('observacoes')
+                        ->columnSpanFull()
+                        ->maxLength(255),
+                ]),
+        ];
     }
 }
