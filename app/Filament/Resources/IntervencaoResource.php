@@ -21,7 +21,7 @@ class IntervencaoResource extends Resource
 
     protected static ?string $navigationGroup = 'Configurações';
 
-        protected static ?string $navigationLabel = 'Intervenções';
+    protected static ?string $navigationLabel = 'Intervenções';
 
     //protected static ?string $recordTitleAttribute = 'pageName';
 
@@ -33,11 +33,9 @@ class IntervencaoResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\TextInput::make('nome')
-                    ->required()
-                    ->maxLength(255),
-            ]);
+            ->schema(
+                static::getForm()
+            );
     }
 
     public static function table(Table $table): Table
@@ -45,6 +43,9 @@ class IntervencaoResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('nome')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('abrv')
+                    ->label("Abreviatura")
                     ->searchable(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
@@ -96,5 +97,17 @@ class IntervencaoResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function getForm()
+    {
+        return [
+            Forms\Components\TextInput::make('nome')
+                ->required()
+                ->maxLength(255),
+            Forms\Components\TextInput::make('abrv')
+                ->required()
+                ->maxLength(10)
+        ];
     }
 }

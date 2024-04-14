@@ -54,11 +54,14 @@ class AgendaResource extends Resource
                 Tables\Columns\TextColumn::make('utente.nome')
                     ->label('Utente')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('intervencaos.nome')
+                Tables\Columns\TextColumn::make('intervencaos.abrv')
                     ->label('Intervenção')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('cirurgiao.abrv')
                     ->label('Cirurgião')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('ajudante.abrv')
+                    ->label('Ajudante')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('data')
                     ->date()
@@ -90,7 +93,7 @@ class AgendaResource extends Resource
                     ->label('Estado do agendamento'),
                 Tables\Filters\Filter::make('data')
                     ->form([
-                        DatePicker::make('Data inicial'),
+                        DatePicker::make('Data inicial')->default(now()),
                         DatePicker::make('Data final'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -137,7 +140,6 @@ class AgendaResource extends Resource
                                         $funcao = 'anestesista';
                                     else
                                         $funcao = 'outro';
-
                                     if ($funcao != 'outro')
                                         $record->faturacao()->create([
                                             'user_id' => auth()->id(),
@@ -189,11 +191,14 @@ class AgendaResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('utente_id')
                         ->relationship('utente', 'nome')
-                        ->native(false)
                         ->preload()
+                        ->native(false)
                         ->required()
                         ->afterStateUpdated(function (?string $state, ?string $old, callable $set) {
-                            $set('sub_sistema_id', 1);
+                            if ($state)
+                                $set('sub_sistema_id', 1);
+                            else
+                                $set('sub_sistema_id', null);
                         })
                         ->manageOptionForm(function (Form $form) {
                             return $form
@@ -210,27 +215,23 @@ class AgendaResource extends Resource
                         ->preload()
                         ->label('Patologias')
                         ->multiple()
+                        ->required()
                         ->relationship('patologias', 'nome')
                         ->createOptionForm(function (Form $form) {
                             return $form
-                                ->schema([
-                                    Forms\Components\TextInput::make('nome')
-                                        ->required()
-                                        ->unique('patologias', 'nome'),
-                                ]);
+                                ->schema(PatologiaResource::getForm());
                         }),
                     Forms\Components\Select::make('intervencaos')
                         ->preload()
                         ->label('Intervenções')
                         ->multiple()
+                        ->required()
                         ->relationship('intervencaos', 'nome')
                         ->createOptionForm(function (Form $form) {
                             return $form
-                                ->schema([
-                                    Forms\Components\TextInput::make('nome')
-                                        ->required()
-                                        ->unique('intervencaos', 'nome'),
-                                ]);
+                                ->schema(
+                                    IntervencaoResource::getForm()
+                                );
                         }),
 
                 ]),

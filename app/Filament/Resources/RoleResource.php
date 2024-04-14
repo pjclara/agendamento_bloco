@@ -44,6 +44,9 @@ class RoleResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('permissions.name')
+                    ->searchable()
+                    ->label('Permissions'),
             ])
             ->filters([
                 //

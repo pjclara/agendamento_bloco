@@ -97,4 +97,12 @@ class PatologiaResource extends Resource
                 SoftDeletingScope::class,
             ]);
     }
+
+    public static function getForm(){
+        return [
+            Forms\Components\TextInput::make('nome')
+                ->required()
+                ->maxLength(255)
+        ];
+    }
 }
